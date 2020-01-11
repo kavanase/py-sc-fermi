@@ -3,6 +3,7 @@ from scipy.optimize import minimize_scalar, minimize
 from .constants import kboltz
 from py_sc_fermi.dos import DOS
 import multiprocessing
+import pandas as pd
 
 class DefectSystem(object):
     
@@ -114,12 +115,50 @@ class DefectSystem(object):
                     step *= 0.25
                     direction = +1.0
             e_fermi += step * direction
+        e_fermi_err = (self.q_tot(e_fermi=e_fermi+step) - self.q_tot(e_fermi=e_fermi-step))/2.0
         if verbose:
             print(f'converged: {converged}')
             print(f'residual: {abs(q_tot)}')
+            print(f'e_fermi_err: {e_fermi_err}')
             print(f'e_fermi: {e_fermi}')
         return e_fermi
-  
+ 
+    def get_sc_fermi_new(self, conv=1e-16, emin=None, emax=None, verbose=True, niter=100):
+        if not emin:
+            emin = self.dos.emin()
+        if not emax:
+            emax = self.dos.emax()
+        bounds = [emin, emax]
+        q_tot_min = self.q_tot(e_fermi=bounds[0])
+        q_tot_max = self.q_tot(e_fermi=bounds[1])
+        if verbose:
+            print(f'Initial E_Fermi bracketing values are {emin} {emax}')
+            print(f'E_F = {emin} => Q_tot = {q_tot_min}')
+            print(f'E_F = {emax} => Q_tot = {q_tot_max}')
+        if (q_tot_min > 0) or (q_tot_max < 0):
+            raise ValueError(f'emin and emax do not appear to bound a zero-charge solution: [{emin} {emax}]')
+        for i in range(niter):
+            e_fermi = np.mean(bounds)
+            q_tot = self.q_tot(e_fermi=e_fermi)
+            if verbose:
+                print(f'iteration {i}')
+                print(bounds[0], e_fermi, bounds[1])
+                print(q_tot_min, q_tot, q_tot_max)
+                print()
+            if (q_tot > 0) and (q_tot <= q_tot_max):
+                q_tot_max = q_tot
+                bounds[1] = e_fermi
+            elif (q_tot < 0) and (q_tot >= q_tot_min):
+                q_tot_min = q_tot
+                bounds[0] = e_fermi
+            else:
+                raise RuntimeError('Warning! You probably shouldn\'t reach here!')
+            if (abs(q_tot_min) < conv) and (abs(q_tot_max) < conv):
+                break
+        return { 'e_fermi': e_fermi,
+                 'n_iter': i,
+                 'bracket': bounds }
+
     def report(self, emin=None, emax=None, conv=1e-16):
         if not emin:
             emin = self.dos.emin()
