@@ -27,7 +27,6 @@ class DOS(object):
         self._edos = edos
         self._egap = egap
         self._nelect = nelect
-        self._replicate_sc_fermi = replicate_sc_fermi
         if normalise:
             self.normalise_dos()
 
@@ -53,10 +52,7 @@ class DOS(object):
 
     def sum_dos(self):
         vbm_index = np.where(self._edos <= 0)[0][-1]
-        if self._replicate_sc_fermi:
-            sum1 = np.trapz(self._dos[:vbm_index+2], self._edos[:vbm_index+2]) # Off-by-one error
-        else:
-            sum1 = np.trapz(self._dos[:vbm_index+1], self._edos[:vbm_index+1]) # Correct integral
+        sum1 = np.trapz(self._dos[:vbm_index+1], self._edos[:vbm_index+1]) # Correct integral
         return sum1
     
     def normalise_dos(self, verbose=True):
