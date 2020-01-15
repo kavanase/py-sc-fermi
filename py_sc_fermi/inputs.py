@@ -79,6 +79,8 @@ def read_input_data(filename, verbose=True, frozen=True, volume=None):
         for k,v in frozen_defects.items():
             for i in defect_species:
                 if i.name == k:
+                    if not volume:
+                        raise ArgumentError('Volume must be set to include frozen defects')
                     i.fix_concentration(float(v) / 1e24 * volume) #  
         nfrozen_chgstates = int(pure_readin.pop(0))
         if verbose:
@@ -96,6 +98,8 @@ def read_input_data(filename, verbose=True, frozen=True, volume=None):
         for k,v in defects.items():
             charge_states = []
             for l,w in v.items():
+                if not volume:
+                    raise ArgumentError('Volume must be set to include frozen defects')
                 chgstate = FrozenDefectChargeState(int(l),float(w) / 1e24 * volume)
                 charge_states.append(chgstate)
             if k in [ds.name for ds in defect_species]:
