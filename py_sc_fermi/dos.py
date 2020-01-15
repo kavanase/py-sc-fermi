@@ -3,7 +3,7 @@ import numpy as np
 class DOS(object):
     """Class for handling density-of-states data and its integration"""
 
-    def __init__(self, dos, edos, egap, nelect, normalise=True, replicate_sc_fermi=True):
+    def __init__(self, dos, edos, egap, nelect, normalise=True):
         """Initialise a DOS instance.
 
         Args:
@@ -13,8 +13,6 @@ class DOS(object):
             nelect (int): Number of electrons.
             normalise (:obj:`bool`, optional): Normalise the DOS so that the integral
                 from e_min --> 0.0 is equal to the `nelect`. Default is `True`.
-            replicate_sc_fermi (:obj:`bool`, optional): If True will reproduce off-by-one
-                errors in SC-Fermi when integrating the DOS. Default is `True`.
 
         Returns:
             None
@@ -79,12 +77,8 @@ class DOS(object):
         # get n0 and p0 using integrals (equations 28.9 in Ashcroft Mermin)
         p0_index = np.where(self._edos <= 0)[0][-1]
         n0_index = np.where(self._edos > self.egap)[0][0]
-        if self._replicate_sc_fermi:
-            p0 = np.trapz( p_func(e_fermi, self._dos[:p0_index+2], self._edos[:p0_index+2], kT ),
-                           self._edos[:p0_index+2]) # Off-by-one error
-        else:
-            p0 = np.trapz( p_func(e_fermi, self._dos[:p0_index+2], self._edos[:p0_index+1], kT ),
-                           self._edos[:p0_index+1]) # Off-by-one error
+        p0 = np.trapz( p_func(e_fermi, self._dos[:p0_index+1], self._edos[:p0_index+1], kT ),
+                       self._edos[:p0_index+1]) 
         n0 = np.trapz( n_func(e_fermi, self._dos[n0_index:], self._edos[n0_index:], kT ),
                        self._edos[n0_index:])
         return p0, n0
