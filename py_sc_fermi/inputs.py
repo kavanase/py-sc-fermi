@@ -17,7 +17,7 @@ def read_unitcell_data(filename, verbose=True):
         print(f"Volume of cell: {volume} A^3")
     return volume
 
-def read_input_data(filename, verbose=True, frozen=True, volume=None):
+def read_input_data(filename, verbose=True, frozen=False, volume=None):
     """TODO refactor this / divide into smaller component functions"""
     with open(filename, 'r') as f:
         readin = f.readlines()
@@ -76,12 +76,12 @@ def read_input_data(filename, verbose=True, frozen=True, volume=None):
             for i in range(nfrozen_defects):
                 l = pure_readin.pop(0).split()
                 frozen_defects.update({l[0]:l[1]})
-        for k,v in frozen_defects.items():
-            for i in defect_species:
-                if i.name == k:
-                    if not volume:
-                        raise ArgumentError('Volume must be set to include frozen defects')
-                    i.fix_concentration(float(v) / 1e24 * volume) #  
+            for k,v in frozen_defects.items():
+                for i in defect_species:
+                    if i.name == k:
+                        if not volume:
+                            raise ArgumentError('Volume must be set to include frozen defects')
+                        i.fix_concentration(float(v) / 1e24 * volume) #  
         nfrozen_chgstates = int(pure_readin.pop(0))
         if verbose:
             print(f'Number of frozen charge states: {nfrozen_chgstates}')
@@ -90,30 +90,30 @@ def read_input_data(filename, verbose=True, frozen=True, volume=None):
             for i in range(nfrozen_chgstates):
                 l = pure_readin.pop(0).split()
                 frozen_defects.append({'Name': l[0], 'Chg_state': l[1], 'Con': l[2]} )
-        defects = {}
-        for key, group in itertools.groupby(frozen_defects, lambda item: item["Name"]):
-            d = {key: {item["Chg_state"] : item["Con"] for item in group}}
-            defects.update(d)
-        frozen_defects = []
-        for k,v in defects.items():
-            charge_states = []
-            for l,w in v.items():
-                if not volume:
-                    raise ArgumentError('Volume must be set to include frozen defects')
-                chgstate = FrozenDefectChargeState(int(l),float(w) / 1e24 * volume)
-                charge_states.append(chgstate)
-            if k in [ds.name for ds in defect_species]:
-                for i in defect_species:
-                    if i.name == k:
-                        for cs in charge_states:
-                            i.charge_states[cs.charge] = cs
-            else:
-                defect_species.append(DefectSpecies(k, 1, charge_states))
+            defects = {}
+            for key, group in itertools.groupby(frozen_defects, lambda item: item["Name"]):
+                d = {key: {item["Chg_state"] : item["Con"] for item in group}}
+                defects.update(d)
+            frozen_defects = []
+            for k,v in defects.items():
+                charge_states = []
+                for l,w in v.items():
+                    if not volume:
+                        raise ArgumentError('Volume must be set to include frozen defects')
+                    chgstate = FrozenDefectChargeState(int(l),float(w) / 1e24 * volume)
+                    charge_states.append(chgstate)
+                if k in [ds.name for ds in defect_species]:
+                    for i in defect_species:
+                        if i.name == k:
+                            for cs in charge_states:
+                                i.charge_states[cs.charge] = cs
+                else:
+                    defect_species.append(DefectSpecies(k, 1, charge_states))
     return { 'defect_species': defect_species,
-         'egap': egap,
-         'temperature': temperature,
-         'nspinpol': nspinpol,
-         'nelect': nelect }
+             'egap': egap,
+             'temperature': temperature,
+             'nspinpol': nspinpol,
+             'nelect': nelect }
 
 def read_dos_data(filename, egap, nelect):
     data = np.loadtxt(filename)
