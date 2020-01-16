@@ -41,13 +41,13 @@ class TestDos(unittest.TestCase):
 
     def test_normalise_dos(self):
         # The integral of rho(E) = 1, from -10.0 to 0, is equal to 10.0
-        # With nelect = 10.0, the normaliss_dos() method should leave
+        # With nelect = 10.0, the normalise_dos() method should leave
         # all dos values = 1.0
         dos_data = np.ones(101)
         edos = np.linspace(-10.0, 10.0, 101)
         egap = 3.0
         nelect = 10
-        dos = DOS( dos=dos_data, edos=edos, egap=egap, nelect=nelect, replicate_sc_fermi=False )
+        dos = DOS(dos=dos_data, edos=edos, egap=egap, nelect=nelect)
         np.testing.assert_equal( dos.dos, dos_data )
 
 if __name__ == '__main__':
